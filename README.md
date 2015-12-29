@@ -1,6 +1,8 @@
 # filterizer
 Simple multifilter plugin for jQuery. Looks just like iTunes smart playlists form filters&
 
+![alt text](http://img.leprosorium.com/2480847 "example")
+
 # Dependencies
 * jQuery 1.11 and higher (though it can work well with older versions)
 
