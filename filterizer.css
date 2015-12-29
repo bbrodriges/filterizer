@@ -1,0 +1,25 @@
+.filterizer-item {
+    clear: both;
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+    .filterizer-item .hidden {
+        display: none;
+    }
+
+    .filterizer-item-field,
+    .filterizer-item-modifier,
+    .filterizer-item-value,
+    .filterizer-item-actions {
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    .filterizer-item-actions {
+        display: none;
+    }
+
+    .filterizer-item:hover .filterizer-item-actions {
+        display: inline-block;
+    }
