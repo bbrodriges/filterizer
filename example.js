@@ -1,5 +1,5 @@
 $(function() {
-    $('.filterizer').filterizer({
+    var filterizer = $('.filterizer').filterizer({
         'filters': [
             {
                 'value': 'id',
@@ -113,6 +113,17 @@ $(function() {
                 'validFor': 'text'
             }
         ]
+    });
+
+    $('.filterizer').on('click', '.filterizer-save-state', function() {
+        filterizer.save_state();
+    });
+
+    $('.filterizer').on('click', '.filterizer-clear-state', function() {
+        filterizer.clear_state();
+    });
+    $('.filterizer').on('click', '.filterizer-load-state', function() {
+        filterizer.load_state();
     });
 
 });

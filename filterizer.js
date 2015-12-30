@@ -21,10 +21,25 @@
         '</div>';
 
     $.fn.filterizer = function(options) {
-        var plugin = this;
+        var holder = this;
 
-        plugin.filter_index = 0;
-        plugin.settings = $.extend(defaults, options);
+        var plugin = {
+            'filter_index': 0,
+            'settings': $.extend(defaults, options),
+
+            'create_filter': function () {
+                holder.append(createFilter());
+            },
+            'save_state': function () {
+                saveState();
+            },
+            'load_state': function () {
+                loadState();
+            },
+            'clear_state': function () {
+                clearState();
+            }
+        };
 
         /**
          * Creates new filter
@@ -37,13 +52,13 @@
             filter.data('id', plugin.filter_index);
 
             filter.find('.filterizer-item-field select').append(getFiltersOptions());
-            filter.find('.filterizer-item-field select').attr('name', 'field[' + plugin.filter_index + ']');
+            filter.find('.filterizer-item-field select').attr('name', 'filterizer[' + plugin.filter_index + '][field]');
 
             filter.find('.filterizer-item-modifier select').append(getModifiersOptions(plugin.settings.filters[0].type));
-            filter.find('.filterizer-item-modifier select').attr('name', 'modifier[' + plugin.filter_index + ']');
+            filter.find('.filterizer-item-modifier select').attr('name', 'filterizer[' + plugin.filter_index + '][modifier]');
 
             filter.find('.filterizer-item-value').append(getFilterValue(filter));
-            filter.find('.filterizer-item-value').children().attr('name', 'value[' + plugin.filter_index + ']');
+            filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + plugin.filter_index + '][value]');
 
             if (getType(filter) == 'select') {
                 filter.find('.filterizer-item-modifier select').remove();
@@ -147,12 +162,12 @@
                 result_object.append(getSelectOptions(data));
             } else {
                 result_object = $('<input type="' + type + '" name="value">');
+            }
 
-                if (attrs !== undefined) {
-                    $.each(attrs, function (attr, value) {
-                        result_object.attr(attr, value);
-                    });
-                }
+            if (attrs !== undefined) {
+                $.each(attrs, function (attr, value) {
+                    result_object.attr(attr, value);
+                });
             }
 
             return result_object;
@@ -204,7 +219,7 @@
          * Checks if there are hidden inactive filters
          */
         function checkHiddenFilters() {
-            $.each(plugin.settings.filters, function(index, filter) {
+            $.each(plugin.settings.filters, function(index) {
                 if (!filterIsActive(index)) {
                     $('.filterizer-item-field option[data-index="' + index + '"]').show();
                     plugin.settings.filters[index].hidden = false;
@@ -212,15 +227,80 @@
             });
         }
 
+        /**
+         * Saves filters state to localStorage
+         *
+         * @return boolean
+         */
+        function saveState() {
+            if (localStorageAvailable()) {
+                var state = '';
+                $('.filterizer-item').each(function () {
+                    // saving values for inputs
+                    $(this).find('input').each(function() {
+                        $(this).val($(this).val());
+                    });
+
+                    // selecting selects
+                    $(this).find('select').each(function() {
+                        var selected = $(this).find('option:selected');
+                        $(this).find('option').removeAttr('selected');
+                        selected.attr('selected', 'selected');
+                    });
+
+                    state = state + $(this).prop('outerHTML');
+                });
+                localStorage.setItem('filterizer-' + window.location, state);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Loads filters state from localStorage
+         */
+        function loadState() {
+            if (localStorageAvailable()) {
+                var state = localStorage.getItem('filterizer-' + window.location);
+                if (state) {
+                    $(holder).append($(state));
+                }
+            }
+        }
+
+        /**
+         * Clears filters state from localStorage
+         */
+        function clearState() {
+            if (localStorageAvailable()) {
+                localStorage.removeItem('filterizer-' + window.location);
+            }
+        }
+
+        /**
+         * Checks if localStorage available
+         *
+         * @return boolean
+         */
+        function localStorageAvailable() {
+            try {
+                return 'localStorage' in window && window['localStorage'] !== null;
+            } catch (e) {
+                return false
+            }
+        }
+
         /** EVENTS */
 
         // create new filter
-        $(plugin).on('click', plugin.settings.newItemButton, function() {
-            plugin.append(createFilter());
+        $(holder).on('click', plugin.settings.newItemButton, function() {
+            plugin.create_filter();
         });
 
         // remove filter
-        $(plugin).on('click', '.filterizer-item-remove-link', function() {
+        $(holder).on('click', '.filterizer-item-remove-link', function() {
             var filter = $(this).closest('.filterizer-item'),
                 index  = getIndex(filter);
 
@@ -231,8 +311,8 @@
             $(this).closest('.filterizer-item').remove();
         });
 
-        // field value changed
-        $(plugin).on('change', '.filterizer-item-field select', function() {
+        // field select changed
+        $(holder).on('change', '.filterizer-item-field select', function() {
             var filter = $(this).closest('.filterizer-item'),
                 index  = getIndex(filter),
                 type   = getType(filter),
@@ -245,9 +325,9 @@
 
             // refilling data
             filter.find('.filterizer-item-value').append(getFilterValue(filter));
-            filter.find('.filterizer-item-value').children().attr('name', 'value[' + id + ']');
+            filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + id + '][value]');
             if (type !== 'select') {
-                var modifier = $('<select name="modifier[' + id + ']"></select>');
+                var modifier = $('<select name="filterizer[' + id + '][modifier]"></select>');
                     modifier.append(getModifiersOptions(type));
                 filter.find('.filterizer-item-modifier').append(modifier);
                 filter.find('.filterizer-item-modifier').removeClass('hidden');
@@ -261,6 +341,8 @@
                 plugin.settings.filters[index].hidden = true;
             }
         });
+
+        return plugin;
     };
 
 }(jQuery));
