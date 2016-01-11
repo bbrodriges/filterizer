@@ -47,26 +47,36 @@
          * @return object
          */
         function createFilter() {
-            var filter = $(itemTemplate);
+            var filter = $(itemTemplate),
+                index  = 0,
+                type   = plugin.settings.filters[0].type,
+                id     = plugin.filter_index;
 
-            filter.data('id', plugin.filter_index);
+            filter.data('id', id);
 
             filter.find('.filterizer-item-field select').append(getFiltersOptions());
-            filter.find('.filterizer-item-field select').attr('name', 'filterizer[' + plugin.filter_index + '][field]');
+            filter.find('.filterizer-item-field select').attr('name', 'filterizer[' + id + '][field]');
 
-            filter.find('.filterizer-item-modifier select').append(getModifiersOptions(plugin.settings.filters[0].type));
-            filter.find('.filterizer-item-modifier select').attr('name', 'filterizer[' + plugin.filter_index + '][modifier]');
+            filter.find('.filterizer-item-modifier select').append(getModifiersOptions(type));
+            filter.find('.filterizer-item-modifier select').attr('name', 'filterizer[' + id + '][modifier]');
 
             filter.find('.filterizer-item-value').append(getFilterValue(filter));
-            filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + plugin.filter_index + '][value]');
+            filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + id + '][value]');
 
-            if (getType(filter) == 'select') {
+            if (type == 'select') {
                 filter.find('.filterizer-item-modifier select').remove();
                 filter.find('.filterizer-item-modifier').addClass('hidden');
             }
 
-            filter.addClass('filter-' + plugin.filter_index);
+            filter.addClass('filter-' + id);
             plugin.filter_index++;
+
+            triggerEvent('filterizer.filtercreate', {
+                'filter': filter,
+                'index': index,
+                'type': type,
+                'id': id
+            });
 
             return filter;
         }
@@ -233,6 +243,8 @@
          * @return boolean
          */
         function saveState() {
+            var success = false;
+
             if (localStorageAvailable()) {
                 var state = '';
                 $('.filterizer-item').each(function () {
@@ -252,22 +264,30 @@
                 });
                 localStorage.setItem('filterizer-' + window.location, state);
 
-                return true;
+                success = true;
             }
 
-            return false;
+            triggerEvent('filterizer.savestate', {'result': success});
+
+            return success;
         }
 
         /**
          * Loads filters state from localStorage
          */
         function loadState() {
+            var success = false;
+
             if (localStorageAvailable()) {
                 var state = localStorage.getItem('filterizer-' + window.location);
                 if (state) {
                     $(holder).append($(state));
+
+                    success = true;
                 }
             }
+
+            triggerEvent('filterizer.loadstate', {'result': success});
         }
 
         /**
@@ -277,6 +297,8 @@
             if (localStorageAvailable()) {
                 localStorage.removeItem('filterizer-' + window.location);
             }
+
+            triggerEvent('filterizer.clearstate');
         }
 
         /**
@@ -292,6 +314,22 @@
             }
         }
 
+        /**
+         * Triggers custom event
+         *
+         * @param {string} eventName Event name
+         * @param {Object} values    Event values
+         */
+        function triggerEvent(eventName, values) {
+            var event = $.Event(eventName);
+
+            if (values && values !== undefined) {
+                event.filterizerData = values;
+            }
+
+            holder.trigger(event);
+        }
+
         /** EVENTS */
 
         // create new filter
@@ -302,13 +340,23 @@
         // remove filter
         $(holder).on('click', '.filterizer-item-remove-link', function() {
             var filter = $(this).closest('.filterizer-item'),
-                index  = getIndex(filter);
+                index  = getIndex(filter),
+                type   = getType(filter),
+                id     = getId(filter);
 
             if (plugin.settings.filters[index].multiple === false) {
                 $('.filterizer-item-field option[data-index="' + index + '"]').show();
             }
 
-            $(this).closest('.filterizer-item').remove();
+            // triggered just before delete
+            triggerEvent('filterizer.filterremove', {
+                'filter': filter,
+                'index': index,
+                'type': type,
+                'id': id
+            });
+
+            filter.remove();
         });
 
         // field select changed
@@ -340,6 +388,13 @@
                 $('.filterizer-item-field option:not(:selected)[data-index="' + index + '"]').hide();
                 plugin.settings.filters[index].hidden = true;
             }
+
+            triggerEvent('filterizer.filterchange', {
+                'filter': filter,
+                'index': index,
+                'type': type,
+                'id': id
+            });
         });
 
         return plugin;

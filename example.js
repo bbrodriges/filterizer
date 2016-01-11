@@ -115,6 +115,7 @@ $(function() {
         ]
     });
 
+    /** STATE METHODS */
     $('.filterizer').on('click', '.filterizer-save-state', function() {
         filterizer.save_state();
     });
@@ -124,6 +125,31 @@ $(function() {
     });
     $('.filterizer').on('click', '.filterizer-load-state', function() {
         filterizer.load_state();
+    });
+
+    /** FILTERIZER EVENTS */
+    $('.filterizer').bind('filterizer.filtercreate', function(e) {
+        console.log(e.filterizerData);
+    });
+
+    $('.filterizer').bind('filterizer.filterchange', function(e) {
+        console.log(e);
+    });
+
+    $('.filterizer').bind('filterizer.filterremove', function(e) {
+        console.log(e);
+    });
+
+    $('.filterizer').bind('filterizer.savestate', function(e) {
+        console.log(e);
+    });
+
+    $('.filterizer').bind('filterizer.loadstate', function(e) {
+        console.log(e);
+    });
+
+    $('.filterizer').bind('filterizer.clearstate', function() {
+        console.log('cleared');
     });
 
 });
