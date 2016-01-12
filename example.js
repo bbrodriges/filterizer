@@ -1,4 +1,9 @@
 $(function() {
+    
+    $('.filterizer').bind('filterizer.init', function() {
+        console.log('filterizer has been inited');
+    });
+
     var filterizer = $('.filterizer').filterizer({
         'filters': [
             {

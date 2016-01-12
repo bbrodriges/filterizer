@@ -164,6 +164,10 @@ filterizer.clear_state();
 
 # Events
 
+> **``filterizer.init``**
+
+> Triggers on plugin initialization.
+
 > **``filterizer.filtercreate``**
 
 > Triggers when filter object is created. Passes filter object to binded function.

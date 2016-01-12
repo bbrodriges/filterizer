@@ -538,6 +538,8 @@
             });
         });
 
+        triggerEvent('filterizer.init');
+
         return plugin;
     };
 
