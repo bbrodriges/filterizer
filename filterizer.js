@@ -28,7 +28,7 @@
             'settings': $.extend(defaults, options),
 
             'create_filter': function() {
-                holder.append(createFilter());
+                appendFilter(createFilter());
             },
             'get_new_filter': function() {
                 return createFilter();
@@ -137,7 +137,7 @@
                     'id': id
                 });
 
-                holder.append(filter);
+                appendFilter(filter);
             });
 
             triggerEvent('filterizer.restorecomplete');
@@ -446,6 +446,8 @@
 
             $.each(origin_array, function(index, record) {
                 if (record.indexOf('filterizer') === 0) {
+                    record = decodeURI(record);
+
                     var found = record.match(re),
                         num = found[1],
                         title = found[2],
@@ -465,16 +467,28 @@
             return result_array;
         }
 
+        /**
+         * Appends filter to holder
+         *
+         * @param {Object} filter Filter jQuery object
+         */
+        function appendFilter(filter) {
+            holder.append(filter);
+
+            triggerEvent('filterizer.filterappend', {
+                'filter': filter,
+                'index': getIndex(filter),
+                'type': getType(filter),
+                'id': getId(filter)
+            });
+        }
+
         /** EVENTS */
 
         // create new filter
-        $(holder).on('click', plugin.settings.newItemButton, function() {
-            var filter = createFilter(),
-                index  = getIndex(filter),
-                type   = getType(filter),
-                id     = getId(filter);
-
-            holder.append(filter);
+        $(plugin.settings.newItemButton).on('click', function() {
+            var filter = createFilter();
+            appendFilter(filter);
         });
 
         // remove filter

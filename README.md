@@ -172,6 +172,10 @@ filterizer.clear_state();
 
 > Triggers when filter object is created. Passes filter object to binded function.
 
+> **``filterizer.filterappend``**
+
+> Triggers when filter appended to parent. Passes filter object to binded function.
+
 > **``filterizer.filterremove``**
 
 > Triggers when filter removed (by pressing cross button). Passes filter object to binded function.

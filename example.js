@@ -1,5 +1,5 @@
 $(function() {
-    
+
     $('.filterizer').bind('filterizer.init', function() {
         console.log('filterizer has been inited');
     });
@@ -135,6 +135,10 @@ $(function() {
     /** FILTERIZER EVENTS */
     $('.filterizer').bind('filterizer.filtercreate', function(e) {
         console.log(e.filterizerData);
+    });
+
+    $('.filterizer').bind('filterizer.filterappend', function(e) {
+        console.log(e);
     });
 
     $('.filterizer').bind('filterizer.filterchange', function(e) {
