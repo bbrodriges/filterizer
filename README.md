@@ -1,5 +1,5 @@
 # filterizer
-Simple multifilter plugin for jQuery. Looks just like iTunes smart playlists form filters&
+Simple multifilter plugin for jQuery. Looks just like iTunes smart playlists form filters.
 
 ![alt text](http://img.leprosorium.com/2480847 "example")
 
@@ -126,4 +126,100 @@ See `example.html` and `example.js`
         }
     ]
 }
+```
+
+# Methods
+> **``create_filter() -> void``**
+
+> Creates and immediately appends new filter to parent.
+
+> **``get_new_filter() -> Object``**
+
+> Creates and returns jQuery object of new filter.
+
+> **``save_state() -> boolean``**
+
+> Saves HTML representation of filters to localStorage.
+
+> **``load_state() -> boolean``**
+
+> Loads HTML representation of filters form localStorage and immediately appends it parent.
+
+> **``clear_state() -> void``**
+
+> Clears HTML representation of filters from localStorage.
+
+> **``get_location_search() -> String``**
+
+> Returns a string of URI encoded GET params with filters data.
+
+> **``restore_filters() -> void``**
+
+> Restores filters from GET params and immediately appends them to parent.
+
+Example:
+```javascript
+filterizer.clear_state();
+```
+
+# Events
+
+> **``filterizer.filtercreate``**
+
+> Triggers when filter object is created. Passes filter object to binded function.
+
+> **``filterizer.filterremove``**
+
+> Triggers when filter removed (by pressing cross button). Passes filter object to binded function.
+
+> **``filterizer.filterchange``**
+
+> Triggers when filter type changes. Passes filter object to bind function.
+
+> **``filterizer.savestate``**
+
+> Triggers after state saved to localStorage. Passes boolean representation of saving result to binded function.
+
+> **``filterizer.loadstate``**
+
+> Triggers after state loaded from localStorage. Passes boolean representation of loading result to binded function.
+
+> **``filterizer.clearstate``**
+
+> Triggers after state cleared from localStorage.
+
+> **``filterizer.filterrestore``**
+
+> Triggers after each individual filter has been restored from GET params. Passes filter object to binded function.
+
+> **``filterizer.restorecomplete``**
+
+> Triggers after all filters have been restored from GET params.
+
+Example:
+```javascript
+$('.filterizer').bind('filterizer.filtercreate', function(e) {
+    console.log(e.filterizerData);
+});
+```
+
+# Pass filters to GET params and restore from them
+
+```javascript
+$(function() {
+    var filterizer = $('.filterizer').filterizer({...});
+
+    // submit
+    $('.filterizer').on('click', '.filterizer-submit', function() {
+        var filters_get_params = filterizer.get_location_search(),
+            joiner = window.location.search.substring(1) ? '&' : '?';
+
+        window.location.search = joiner + filters_get_params;
+    });
+
+    // restoring filters from GET params
+    if (window.location.search.substring(1)) {
+        filterizer.restore_filters();
+    }
+});
 ```

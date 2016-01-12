@@ -27,17 +27,26 @@
             'filter_index': 0,
             'settings': $.extend(defaults, options),
 
-            'create_filter': function () {
+            'create_filter': function() {
                 holder.append(createFilter());
             },
-            'save_state': function () {
+            'get_new_filter': function() {
+                return createFilter();
+            },
+            'save_state': function() {
                 saveState();
             },
-            'load_state': function () {
+            'load_state': function() {
                 loadState();
             },
-            'clear_state': function () {
+            'clear_state': function() {
                 clearState();
+            },
+            'get_location_search': function() {
+                return getLocationSearch();
+            },
+            'restore_filters': function() {
+                restoreFilters();
             }
         };
 
@@ -49,7 +58,7 @@
         function createFilter() {
             var filter = $(itemTemplate),
                 index  = 0,
-                type   = plugin.settings.filters[0].type,
+                type   = plugin.settings.filters[index].type,
                 id     = plugin.filter_index;
 
             filter.data('id', id);
@@ -64,7 +73,6 @@
             filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + id + '][value]');
 
             if (type == 'select') {
-                filter.find('.filterizer-item-modifier select').remove();
                 filter.find('.filterizer-item-modifier').addClass('hidden');
             }
 
@@ -79,6 +87,60 @@
             });
 
             return filter;
+        }
+
+        /**
+         * Restores filters from GET params
+         */
+        function restoreFilters() {
+            var get_params = parseLocationSearch();
+
+            $.each(get_params, function(index, params) {
+                var filter = $(itemTemplate),
+                    id = plugin.filter_index;
+
+                filter.data('id', id);
+
+                filter.find('.filterizer-item-field select').append(getFiltersOptions());
+                filter.find('.filterizer-item-field select option').removeAttr('selected');
+                filter.find('.filterizer-item-field select option[value="' + params.field + '"]').attr('selected', 'selected');
+                filter.find('.filterizer-item-field select').attr('name', 'filterizer[' + id + '][field]');
+
+                var type = getType(filter);
+
+                filter.find('.filterizer-item-modifier select').append(getModifiersOptions(type));
+                filter.find('.filterizer-item-modifier select').attr('name', 'filterizer[' + id + '][modifier]');
+
+                if (type == 'select') {
+                    filter.find('.filterizer-item-modifier').addClass('hidden');
+                } else {
+                    filter.find('.filterizer-item-modifier select option').removeAttr('selected');
+                    filter.find('.filterizer-item-modifier select option[value="' + params.modifier + '"]').attr('selected', 'selected');
+                }
+
+                filter.find('.filterizer-item-value').append(getFilterValue(filter));
+                filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + id + '][value]');
+
+                if (type == 'select') {
+                    filter.find('.filterizer-item-value select option').removeAttr('selected');
+                    filter.find('.filterizer-item-value select option[value="' + params.value + '"]').attr('selected', 'selected');
+                } else {
+                    filter.find('.filterizer-item-value input').val(decodeURI(params.value));
+                }
+
+                plugin.filter_index++;
+
+                triggerEvent('filterizer.filterrestore', {
+                    'filter': filter,
+                    'index': getIndex(filter),
+                    'type': type,
+                    'id': id
+                });
+
+                holder.append(filter);
+            });
+
+            triggerEvent('filterizer.restorecomplete');
         }
 
         /**
@@ -117,17 +179,24 @@
         function getModifiersOptions(type) {
             var modifier_index = 0,
                 options = [];
-            $.each(plugin.settings.modifiers, function(index, modifier) {
-                // if modifier type is valid for current selected filter type or modifier is valid for everything
-                if (modifier.validFor === undefined || modifier.validFor.indexOf(type) >= 0) {
-                    var option = $('<option value="' + modifier.value + '">' + modifier.title + '</option>');
-                    if (modifier_index === 0) {
-                        option.attr('selected', 'selected');
+
+            if (type == 'select') {
+                var option = $('<option value="=">=</option>');
+                option.attr('selected', 'selected');
+                options.push(option);
+            } else {
+                $.each(plugin.settings.modifiers, function (index, modifier) {
+                    // if modifier type is valid for current selected filter type or modifier is valid for everything
+                    if (modifier.validFor === undefined || modifier.validFor.indexOf(type) >= 0) {
+                        var option = $('<option value="' + modifier.value + '">' + modifier.title + '</option>');
+                        if (modifier_index === 0) {
+                            option.attr('selected', 'selected');
+                        }
+                        options.push(option);
+                        modifier_index++;
                     }
-                    options.push(option);
-                    modifier_index++;
-                }
-            });
+                });
+            }
 
             return options;
         }
@@ -288,6 +357,8 @@
             }
 
             triggerEvent('filterizer.loadstate', {'result': success});
+
+            return success;
         }
 
         /**
@@ -330,11 +401,80 @@
             holder.trigger(event);
         }
 
+        /**
+         * Compiles filters into GET http parameters
+         *
+         * @return string
+         */
+        function getLocationSearch() {
+            var location_search = [];
+
+            $('.filterizer-item').each(function() {
+                var id = getId($(this)),
+                    type  = getType($(this)),
+                    location_part = [];
+
+                var field = $(this).find('.filterizer-item-field option:selected').val(),
+                    modifier = $(this).find('.filterizer-item-modifier option:selected').val(),
+                    value = type == 'select'
+                        ? $(this).find('.filterizer-item-value option:selected').val()
+                        : $(this).find('.filterizer-item-value input').val();
+
+                location_part.push('filterizer[' + id + '][field]=' + encodeURI(field));
+                if (modifier && modifier !== undefined) {
+                    location_part.push('filterizer[' + id + '][modifier]=' + encodeURI(modifier));
+                }
+                location_part.push('filterizer[' + id + '][value]=' + encodeURI(value));
+
+                location_search.push(location_part.join('&'));
+            });
+
+            return location_search.join('&');
+        }
+
+        /**
+         * Parses http GET params to extract filters data
+         *
+         * @return Array
+         */
+        function parseLocationSearch() {
+            var origin_string = location.search.substring(1),
+                origin_array  = origin_string.split('&'),
+                result_array  = [];
+
+            var re = /filterizer\[(\d*)\]\[(.*?)\]=(.*)/i;
+
+            $.each(origin_array, function(index, record) {
+                if (record.indexOf('filterizer') === 0) {
+                    var found = record.match(re),
+                        num = found[1],
+                        title = found[2],
+                        value = found[3];
+
+                    if (!result_array[num] || result_array === undefined) {
+                        result_array[num] = {};
+                    }
+
+                    var info_obj = {};
+                    info_obj[title] = value;
+
+                    $.extend(result_array[num], info_obj);
+                }
+            });
+
+            return result_array;
+        }
+
         /** EVENTS */
 
         // create new filter
         $(holder).on('click', plugin.settings.newItemButton, function() {
-            plugin.create_filter();
+            var filter = createFilter(),
+                index  = getIndex(filter),
+                type   = getType(filter),
+                id     = getId(filter);
+
+            holder.append(filter);
         });
 
         // remove filter
@@ -374,10 +514,11 @@
             // refilling data
             filter.find('.filterizer-item-value').append(getFilterValue(filter));
             filter.find('.filterizer-item-value').children().attr('name', 'filterizer[' + id + '][value]');
+
+            var modifier = $('<select name="filterizer[' + id + '][modifier]"></select>');
+            modifier.append(getModifiersOptions(type));
+            filter.find('.filterizer-item-modifier').append(modifier);
             if (type !== 'select') {
-                var modifier = $('<select name="filterizer[' + id + '][modifier]"></select>');
-                    modifier.append(getModifiersOptions(type));
-                filter.find('.filterizer-item-modifier').append(modifier);
                 filter.find('.filterizer-item-modifier').removeClass('hidden');
             }
 

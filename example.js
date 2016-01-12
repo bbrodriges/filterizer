@@ -152,4 +152,9 @@ $(function() {
         console.log('cleared');
     });
 
+    // restore filters from get params (see filterizer.get_location_search())
+    if (window.location.search.substring(1)) { 
+        filterizer.restore_filters();
+    }
+
 });
