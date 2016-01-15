@@ -55,15 +55,7 @@ See `example.html` and `example.js`
             'title': 'State',
             'type': 'select',
             'multiple': false, // prevents more than one filter to have this value
-            'data': [
-                {
-                    'value': 1,
-                    'title': 'Active'
-                },
-                {
-                    'value': 0,
-                    'title': 'Inactive'
-                }
+            'data': 'http://mysite.com/activity_states.json' // you can also define URL to get data from
             ]
         },
         {

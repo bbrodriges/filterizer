@@ -440,7 +440,7 @@
         function parseLocationSearch() {
             var origin_string = location.search.substring(1),
                 origin_array  = origin_string.split('&'),
-                result_array  = [];
+                result_array  = {};
 
             var re = /filterizer\[(\d*)\]\[(.*?)\]=(.*)/i;
 
@@ -480,6 +480,18 @@
                 'index': getIndex(filter),
                 'type': getType(filter),
                 'id': getId(filter)
+            });
+        }
+
+        /**
+         * Compiles filters settings (e.g. loads data from external URLs etc.)
+         */
+        function compileFilters()
+        {
+            $.each(plugin.settings.filters, function(index, filter) {
+                if (filter.type == 'select' && (filter.data instanceof String)) {
+                    plugin.settings.filters[index].data = $.parseJSON(filter.data);
+                }
             });
         }
 
@@ -552,6 +564,10 @@
             });
         });
 
+        // pre init actions
+        compileFilters();
+
+        // init
         triggerEvent('filterizer.init');
 
         return plugin;
