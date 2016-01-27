@@ -514,15 +514,15 @@
                 $('.filterizer-item-field option[data-index="' + index + '"]').show();
             }
 
-            // triggered just before delete
+            filter.remove();
+
+            // triggered after filter delete
             triggerEvent('filterizer.filterremove', {
                 'filter': filter,
                 'index': index,
                 'type': type,
                 'id': id
             });
-
-            filter.remove();
         });
 
         // field select changed
