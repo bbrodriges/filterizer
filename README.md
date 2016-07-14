@@ -196,6 +196,14 @@ filterizer.clear_state();
 
 > Triggers after all filters have been restored from GET params.
 
+> **``filterizer.presubmit``**
+
+> Triggers when value field focused and user presses any key. Triggers right before `filterizer.submit`.
+
+> **``filterizer.submit``**
+
+> Triggers when value field focused and user presses any key. Triggers right after `filterizer.presubmit`.
+
 Example:
 ```javascript
 $('.filterizer').bind('filterizer.filtercreate', function(e) {
@@ -209,12 +217,21 @@ $('.filterizer').bind('filterizer.filtercreate', function(e) {
 $(function() {
     var filterizer = $('.filterizer').filterizer({...});
 
-    // submit
-    $('.filterizer').on('click', '.filterizer-submit', function() {
+    function submitFilters() {
         var filters_get_params = filterizer.get_location_search(),
             joiner = window.location.search.substring(1) ? '&' : '?';
 
         window.location.search = joiner + filters_get_params;
+    }
+
+    // submit
+    $('.filterizer').on('click', '.filterizer-submit', function() {
+        submitFilters();
+    });
+
+    // enter submit
+    $('.filterizer').bind('filterizer.submit', function() {
+        submitFilters();
     });
 
     // restoring filters from GET params

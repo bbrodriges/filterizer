@@ -564,6 +564,13 @@
             });
         });
 
+        $(holder).on('keypress', '.filterizer-item-value', function() {
+            if (event.which == 13) {
+                triggerEvent('filterizer.presubmit');
+                triggerEvent('filterizer.submit');
+            }
+        });
+
         // pre init actions
         compileFilters();
 
